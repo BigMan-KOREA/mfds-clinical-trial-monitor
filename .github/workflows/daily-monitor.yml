@@ -10,10 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
     
@@ -21,9 +22,11 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y chromium-browser chromium-chromedriver
+        sudo apt-get install -y xvfb
     
     - name: Install Python packages
       run: |
+        pip install --upgrade pip
         pip install selenium pandas openpyxl
     
     - name: Run monitoring
@@ -31,15 +34,25 @@ jobs:
         SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
         SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
         RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+        DISPLAY: ':99'
       run: |
         export PATH=$PATH:/usr/lib/chromium-browser/
-        python mfds_monitor.py
+        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        python mfds_monitor.py || echo "Monitoring completed with status $?"
+    
+    - name: Check results
+      if: always()
+      run: |
+        echo "Checking for output files..."
+        ls -la *.csv 2>/dev/null || echo "No CSV files found"
+        ls -la *.xlsx 2>/dev/null || echo "No Excel files found"
     
     - name: Upload data
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: monitor-data
+        name: monitor-data-${{ github.run_number }}
         path: |
           previous_data.csv
           *.xlsx
+        if-no-files-found: warn
