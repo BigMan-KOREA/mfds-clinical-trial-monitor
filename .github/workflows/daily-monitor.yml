@@ -1,0 +1,45 @@
+name: MFDS Daily Monitor
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install Chrome
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser chromium-chromedriver
+    
+    - name: Install Python packages
+      run: |
+        pip install selenium pandas openpyxl
+    
+    - name: Run monitoring
+      env:
+        SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+        SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+        RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+      run: |
+        export PATH=$PATH:/usr/lib/chromium-browser/
+        python mfds_monitor.py
+    
+    - name: Upload data
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: monitor-data
+        path: |
+          previous_data.csv
+          *.xlsx
