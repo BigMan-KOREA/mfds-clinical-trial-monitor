@@ -18,32 +18,23 @@ jobs:
       with:
         python-version: '3.9'
     
-    - name: Install Chrome dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget unzip
-        
-    - name: Install Chrome and ChromeDriver
-      run: |
-        # Chrome 설치
-        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-        sudo echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
-        
-        # ChromeDriver 설치
-        CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | awk -F'.' '{print $1}')
-        wget -q "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}" -O /tmp/chromedriver_version
-        CHROMEDRIVER_VERSION=$(cat /tmp/chromedriver_version)
-        wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" -O /tmp/chromedriver.zip
-        unzip -o /tmp/chromedriver.zip -d /tmp/
-        sudo mv /tmp/chromedriver /usr/local/bin/
-        sudo chmod +x /usr/local/bin/chromedriver
+    - name: Setup Chrome
+      uses: browser-actions/setup-chrome@latest
+      with:
+        chrome-version: stable
+    
+    - name: Setup ChromeDriver
+      uses: nanasess/setup-chromedriver@v2
     
     - name: Install Python packages
       run: |
         pip install --upgrade pip
         pip install selenium pandas openpyxl
+    
+    - name: Test Chrome
+      run: |
+        chrome --version
+        chromedriver --version
     
     - name: Run monitoring
       env:
