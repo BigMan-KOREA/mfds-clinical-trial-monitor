@@ -30,18 +30,22 @@ def setup_driver():
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--window-size=1920,1080')
     
-    # Chromium 경로 명시
-    chrome_options.binary_location = '/usr/bin/chromium-browser'
-    
-    service = Service('/usr/lib/chromium-browser/chromedriver')
-    
+    # GitHub Actions 환경에서는 경로 지정 불필요
     try:
-        driver = webdriver.Chrome(service=service, options=chrome_options)
+        driver = webdriver.Chrome(options=chrome_options)
         print("Chrome 드라이버 생성 성공")
         return driver
     except Exception as e:
         print(f"Chrome 드라이버 생성 실패: {e}")
-        raise
+        # 대안: ChromeDriver 경로 명시
+        try:
+            service = Service('/usr/local/bin/chromedriver')
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            print("Chrome 드라이버 생성 성공 (경로 지정)")
+            return driver
+        except Exception as e2:
+            print(f"Chrome 드라이버 생성 재시도 실패: {e2}")
+            raise
 
 def crawl_recent_pages(pages_to_check=5):
     """최근 N페이지 크롤링"""
